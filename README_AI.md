@@ -224,6 +224,221 @@ if (missingVars.length > 0) {
 }
 ```
 
+## GitHub & Deployment Setup
+
+### Initial Setup (One-time)
+
+#### 1. Create GitHub Repository
+1. Go to https://github.com/new
+2. Repository name: `viaizer` (or your preferred name)
+3. Make it **Private** (recommended for bot projects)
+4. Do NOT initialize with README, .gitignore, or license
+5. Click "Create repository"
+
+#### 2. Connect Local Repository to GitHub
+```powershell
+# Replace with your GitHub username and repository name
+git remote add origin git@github.com:YOUR_USERNAME/viaizer.git
+git branch -M main
+git push -u origin main
+```
+
+#### 3. Setup GitHub on VPS
+```powershell
+# Copy setup script to VPS
+scp -i "d:\viAIzer\vps_bot_key" scripts\setup-github.sh root@217.119.129.239:/root/
+
+# Run setup script (replace with your repo URL)
+ssh -i "d:\viAIzer\vps_bot_key" root@217.119.129.239 "bash /root/setup-github.sh git@github.com:YOUR_USERNAME/viaizer.git"
+```
+
+The script will:
+- Generate SSH key for GitHub
+- Display the public key to add to GitHub
+- Clone the repository to `/root/viaizer`
+- Create `.env.production` from `.env.example`
+
+#### 4. Add SSH Key to GitHub
+1. Copy the displayed public key from the script output
+2. Go to: https://github.com/settings/keys
+3. Click "New SSH key"
+4. Title: "VPS viaizer.art"
+5. Paste the public key
+6. Click "Add SSH key"
+7. Run the setup script again to complete
+
+### Deploy to Production
+
+#### Quick Deploy (One Command)
+```powershell
+# From project directory
+powershell -ExecutionPolicy Bypass -File scripts\deploy.ps1
+```
+
+This script will:
+1. Check git status and show changes
+2. Commit changes with a message
+3. Push to GitHub
+4. Copy deployment script to VPS
+5. Execute deployment on VPS
+6. Show deployment logs
+
+#### What Happens During Deployment
+
+On VPS, the deployment script (`scripts/deploy.sh`) will:
+1. Stop the running bot (PM2 or systemd)
+2. Pull latest changes from GitHub
+3. Install/update dependencies (`npm install --production`)
+4. Setup environment (copy `.env.production` to `.env`)
+5. Run database migrations (if any)
+6. Start the bot (PM2, systemd, or nohup)
+7. Verify the bot is running
+8. Show recent logs
+
+#### Manual Deployment Steps
+
+If you need more control, you can deploy manually:
+
+```powershell
+# 1. Commit and push to GitHub
+git add .
+git commit -m "Your commit message"
+git push origin main
+
+# 2. SSH to VPS and deploy
+ssh -i "d:\viAIzer\vps_bot_key" root@217.119.129.239
+cd /root/viaizer
+git pull origin main
+npm install --production
+cp .env.production .env
+pm2 restart viaizer-bot  # or: systemctl restart viaizer-bot
+```
+
+### Process Management
+
+#### Using PM2 (Recommended)
+```bash
+# Install PM2 on VPS (one-time)
+npm install -g pm2
+
+# Start bot with PM2
+pm2 start bot.js --name viaizer-bot
+
+# Save PM2 configuration
+pm2 save
+
+# Setup PM2 to start on boot
+pm2 startup
+```
+
+PM2 commands:
+```bash
+pm2 list              # List all processes
+pm2 logs viaizer-bot  # View logs
+pm2 restart viaizer-bot # Restart bot
+pm2 stop viaizer-bot   # Stop bot
+pm2 monit             # Monitor resources
+```
+
+#### Using systemd (Alternative)
+Create `viaizer-bot.service`:
+```ini
+[Unit]
+Description=Viaizer Bot
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/viaizer
+ExecStart=/usr/bin/node bot.js
+Restart=on-failure
+RestartSec=10
+Environment=NODE_ENV=production
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Install and start:
+```bash
+cp viaizer-bot.service /etc/systemd/system/
+systemctl daemon-reload
+systemctl enable viaizer-bot
+systemctl start viaizer-bot
+```
+
+Systemd commands:
+```bash
+systemctl status viaizer-bot  # Check status
+systemctl restart viaizer-bot  # Restart bot
+systemctl stop viaizer-bot     # Stop bot
+journalctl -u viaizer-bot     # View logs
+```
+
+### Troubleshooting Deployment
+
+#### Deployment Fails
+```bash
+# Check deployment log on VPS
+ssh -i "d:\viAIzer\vps_bot_key" root@217.119.129.239 "tail -n 100 /root/viaizer/deploy.log"
+
+# Check application logs
+ssh -i "d:\viAIzer\vps_bot_key" root@217.119.129.239 "tail -n 100 /root/viaizer/app.log"
+```
+
+#### Git Push Fails
+```powershell
+# Check remote URL
+git remote -v
+
+# Update remote URL if needed
+git remote set-url origin git@github.com:YOUR_USERNAME/viaizer.git
+```
+
+#### Environment Variables Missing
+```bash
+# SSH to VPS and check .env
+ssh -i "d:\viAIzer\vps_bot_key" root@217.119.129.239
+cd /root/viaizer
+cat .env.production
+
+# Edit if needed
+nano .env.production
+```
+
+#### Bot Won't Start
+```bash
+# Check if process is running
+ssh -i "d:\viAIzer\vps_bot_key" root@217.119.129.239 "ps aux | grep node"
+
+# Check PM2 status
+ssh -i "d:\viAIzer\vps_bot_key" root@217.119.129.239 "pm2 status"
+
+# Check systemd status
+ssh -i "d:\viAIzer\vps_bot_key" root@217.119.129.239 "systemctl status viaizer-bot"
+```
+
+### Deployment Workflow Summary
+
+```
+Local Development
+    ↓
+git add & commit
+    ↓
+git push origin main
+    ↓
+GitHub Repository
+    ↓
+VPS: git pull origin main
+    ↓
+VPS: npm install --production
+    ↓
+VPS: Restart bot (PM2/systemd)
+    ↓
+Bot Running in Production
+```
+
 ## Firewall
 
 Active firewall (UFW) with rules:
