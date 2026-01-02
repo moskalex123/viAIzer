@@ -67,7 +67,8 @@ if ($LASTEXITCODE -ne 0) {
 
 # Execute deployment script on VPS
 Write-Host "Executing deployment on VPS..." -ForegroundColor Yellow
-ssh -i $KEY_PATH root@${VPS_IP} "chmod +x /root/deploy.sh && bash /root/deploy.sh"
+$deployCommand = "chmod +x /root/deploy.sh ; bash /root/deploy.sh"
+ssh -i $KEY_PATH root@${VPS_IP} $deployCommand
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host "ERROR: Deployment failed on VPS" -ForegroundColor Red
