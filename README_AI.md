@@ -281,7 +281,26 @@ git branch -M main
 git push -u origin main
 ```
 
-#### 6. Setup VPS with GitHub (One-time)
+#### 6. Generate VPS GitHub SSH Key
+```powershell
+# Generate SSH key on VPS and get public key
+powershell -ExecutionPolicy Bypass -File scripts\generate-vps-github-key.ps1
+```
+
+The script will:
+- Test VPS connection
+- Generate SSH key on VPS
+- Display the public key to add to GitHub
+
+#### 7. Add VPS SSH Key to GitHub
+1. Copy the public key from the script output
+2. Go to: https://github.com/settings/keys
+3. Click "New SSH key"
+4. Title: "VPS viaizer.art"
+5. Paste the public key
+6. Click "Add SSH key"
+
+#### 8. Setup VPS with GitHub
 ```powershell
 # Run setup script from local machine
 powershell -ExecutionPolicy Bypass -File scripts\setup-vps-github.ps1
@@ -289,24 +308,9 @@ powershell -ExecutionPolicy Bypass -File scripts\setup-vps-github.ps1
 
 This script will:
 - Test VPS connection
-- Create project directory on VPS
 - Clone repository to `/root/viaizer`
 - Create `.env.production` from `.env.example`
 - Copy deployment script to VPS
-
-**Note:** Before running this script, make sure you have added the VPS SSH key to GitHub (see step 7 below).
-
-#### 7. Add VPS SSH Key to GitHub
-1. SSH to VPS to get the public key:
-   ```powershell
-   ssh -i "d:\viAIzer\vps_bot_key" root@217.119.129.239 "cat ~/.ssh/id_ed25519.pub"
-   ```
-2. Copy the public key
-3. Go to: https://github.com/settings/keys
-4. Click "New SSH key"
-5. Title: "VPS viaizer.art"
-6. Paste the public key
-7. Click "Add SSH key"
 
 ### Deploy to Production
 
@@ -527,6 +531,11 @@ powershell -ExecutionPolicy Bypass -File scripts\setup-github-local.ps1
 ### Diagnose GitHub SSH issues
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\diagnose-github.ps1
+```
+
+### Generate VPS GitHub SSH key
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\generate-vps-github-key.ps1
 ```
 
 ### Setup VPS with GitHub
