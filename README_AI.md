@@ -230,7 +230,7 @@ if (missingVars.length > 0) {
 
 #### 1. Create GitHub Repository
 1. Go to https://github.com/new
-2. Repository name: `viaizer` (or your preferred name)
+2. Repository name: `viAIzer` (or your preferred name)
 3. Make it **Private** (recommended for bot projects)
 4. Do NOT initialize with README, .gitignore, or license
 5. Click "Create repository"
@@ -276,34 +276,37 @@ You should see: `Hi YOUR_USERNAME! You've successfully authenticated...`
 #### 5. Connect Local Repository to GitHub
 ```powershell
 # Replace with your GitHub username and repository name
-git remote add origin git@github.com:YOUR_USERNAME/viaizer.git
+git remote add origin git@github.com:YOUR_USERNAME/viAIzer.git
 git branch -M main
 git push -u origin main
 ```
 
-#### 3. Setup GitHub on VPS
+#### 6. Setup VPS with GitHub (One-time)
 ```powershell
-# Copy setup script to VPS
-scp -i "d:\viAIzer\vps_bot_key" scripts\setup-github.sh root@217.119.129.239:/root/
-
-# Run setup script (replace with your repo URL)
-ssh -i "d:\viAIzer\vps_bot_key" root@217.119.129.239 "bash /root/setup-github.sh git@github.com:YOUR_USERNAME/viaizer.git"
+# Run setup script from local machine
+powershell -ExecutionPolicy Bypass -File scripts\setup-vps-github.ps1
 ```
 
-The script will:
-- Generate SSH key for GitHub
-- Display of public key to add to GitHub
+This script will:
+- Test VPS connection
+- Create project directory on VPS
 - Clone repository to `/root/viaizer`
 - Create `.env.production` from `.env.example`
+- Copy deployment script to VPS
 
-#### 4. Add SSH Key to GitHub
-1. Copy the displayed public key from the script output
-2. Go to: https://github.com/settings/keys
-3. Click "New SSH key"
-4. Title: "VPS viaizer.art"
-5. Paste the public key
-6. Click "Add SSH key"
-7. Run the setup script again to complete
+**Note:** Before running this script, make sure you have added the VPS SSH key to GitHub (see step 7 below).
+
+#### 7. Add VPS SSH Key to GitHub
+1. SSH to VPS to get the public key:
+   ```powershell
+   ssh -i "d:\viAIzer\vps_bot_key" root@217.119.129.239 "cat ~/.ssh/id_ed25519.pub"
+   ```
+2. Copy the public key
+3. Go to: https://github.com/settings/keys
+4. Click "New SSH key"
+5. Title: "VPS viaizer.art"
+6. Paste the public key
+7. Click "Add SSH key"
 
 ### Deploy to Production
 
@@ -431,7 +434,7 @@ ssh -i "d:\viAIzer\vps_bot_key" root@217.119.129.239 "tail -n 100 /root/viaizer/
 git remote -v
 
 # Update remote URL if needed
-git remote set-url origin git@github.com:YOUR_USERNAME/viaizer.git
+git remote set-url origin git@github.com:YOUR_USERNAME/viAIzer.git
 ```
 
 #### Environment Variables Missing
@@ -521,16 +524,14 @@ powershell -ExecutionPolicy Bypass -File scripts\generate-vps-key.ps1
 powershell -ExecutionPolicy Bypass -File scripts\setup-github-local.ps1
 ```
 
-### Setup VPS (if needed)
-```bash
-scp -i "d:\viAIzer\vps_bot_key" scripts\setup-vps.sh root@217.119.129.239:/root/
-ssh -i "d:\viAIzer\vps_bot_key" root@217.119.129.239 "chmod +x /root/setup-vps.sh && bash /root/setup-vps.sh"
+### Diagnose GitHub SSH issues
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\diagnose-github.ps1
 ```
 
-### Setup GitHub on VPS
-```bash
-scp -i "d:\viAIzer\vps_bot_key" scripts\setup-github.sh root@217.119.129.239:/root/
-ssh -i "d:\viAIzer\vps_bot_key" root@217.119.129.239 "bash /root/setup-github.sh git@github.com:YOUR_USERNAME/viaizer.git"
+### Setup VPS with GitHub
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\setup-vps-github.ps1
 ```
 
 ### Deploy to production
