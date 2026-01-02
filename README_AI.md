@@ -235,7 +235,45 @@ if (missingVars.length > 0) {
 4. Do NOT initialize with README, .gitignore, or license
 5. Click "Create repository"
 
-#### 2. Connect Local Repository to GitHub
+#### 2. Setup GitHub SSH Key Locally
+
+**Option A: Use Setup Script (Recommended)**
+```powershell
+# Generate SSH key and get instructions
+powershell -ExecutionPolicy Bypass -File scripts\setup-github-local.ps1
+```
+
+The script will:
+- Generate SSH key for GitHub
+- Display the public key to add to GitHub
+- Create/update SSH config automatically
+
+**Option B: Manual Setup**
+```powershell
+# Generate SSH key
+ssh-keygen -t ed25519 -f ~/.ssh/github_key -C "github@your-pc"
+
+# Show public key
+cat ~/.ssh/github_key.pub
+```
+
+#### 3. Add SSH Key to GitHub
+1. Copy the public key from the script output
+2. Go to: https://github.com/settings/keys
+3. Click "New SSH key"
+4. Title: "Windows PC - YOUR_COMPUTER_NAME"
+5. Paste the public key
+6. Click "Add SSH key"
+
+#### 4. Test GitHub Connection
+```powershell
+# Test SSH connection to GitHub
+ssh -T git@github.com
+```
+
+You should see: `Hi YOUR_USERNAME! You've successfully authenticated...`
+
+#### 5. Connect Local Repository to GitHub
 ```powershell
 # Replace with your GitHub username and repository name
 git remote add origin git@github.com:YOUR_USERNAME/viaizer.git
@@ -254,8 +292,8 @@ ssh -i "d:\viAIzer\vps_bot_key" root@217.119.129.239 "bash /root/setup-github.sh
 
 The script will:
 - Generate SSH key for GitHub
-- Display the public key to add to GitHub
-- Clone the repository to `/root/viaizer`
+- Display of public key to add to GitHub
+- Clone repository to `/root/viaizer`
 - Create `.env.production` from `.env.example`
 
 #### 4. Add SSH Key to GitHub
@@ -287,7 +325,7 @@ This script will:
 
 On VPS, the deployment script (`scripts/deploy.sh`) will:
 1. Stop the running bot (PM2 or systemd)
-2. Pull latest changes from GitHub
+2. Pull the latest changes from GitHub
 3. Install/update dependencies (`npm install --production`)
 4. Setup environment (copy `.env.production` to `.env`)
 5. Run database migrations (if any)
@@ -473,15 +511,31 @@ icacls "d:\viAIzer\vps_bot_key" /grant:r "$env:USERNAME:F"
 
 ## Scripts
 
-### Generate new SSH key
+### Generate new SSH key for VPS
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\generate-vps-key.ps1
+```
+
+### Setup GitHub SSH key locally
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\setup-github-local.ps1
 ```
 
 ### Setup VPS (if needed)
 ```bash
 scp -i "d:\viAIzer\vps_bot_key" scripts\setup-vps.sh root@217.119.129.239:/root/
 ssh -i "d:\viAIzer\vps_bot_key" root@217.119.129.239 "chmod +x /root/setup-vps.sh && bash /root/setup-vps.sh"
+```
+
+### Setup GitHub on VPS
+```bash
+scp -i "d:\viAIzer\vps_bot_key" scripts\setup-github.sh root@217.119.129.239:/root/
+ssh -i "d:\viAIzer\vps_bot_key" root@217.119.129.239 "bash /root/setup-github.sh git@github.com:YOUR_USERNAME/viaizer.git"
+```
+
+### Deploy to production
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\deploy.ps1
 ```
 
 ## Quick Reference
@@ -492,6 +546,7 @@ ssh -i "d:\viAIzer\vps_bot_key" root@217.119.129.239 "chmod +x /root/setup-vps.s
 | `scp -i "d:\viAIzer\vps_bot_key" file root@217.119.129.239:/path/` | Upload file |
 | `scp -i "d:\viAIzer\vps_bot_key" root@217.119.129.239:/path/file .` | Download file |
 | `ssh -i "d:\viAIzer\vps_bot_key" root@217.119.129.239 "command"` | Execute command |
+| `powershell -ExecutionPolicy Bypass -File scripts\deploy.ps1` | Deploy to production |
 
 ---
 
