@@ -158,7 +158,7 @@ class GeminiBotCopy {
       parse_mode: 'HTML',
       reply_markup: {
         inline_keyboard: [[
-          { text: '🪙 Купить подписку / CRED', callback_data: 'buy_subscription' }
+          { text: '🪙 Купить подписку / 🔋', callback_data: 'buy_subscription' }
         ]]
       }
     });
@@ -410,9 +410,9 @@ class GeminiBotCopy {
     await this.bot.sendMessage(chatId, text, {
       reply_markup: {
         inline_keyboard: [
-          [{ text: '💎 Премиум на месяц - 299 CRED', callback_data: 'sub_premium_30d' }],
-          [{ text: '💎 Премиум на год - 2999 CRED', callback_data: 'sub_premium_365d' }],
-          [{ text: '🪙 Купить CRED', callback_data: 'buy_credits' }]
+          [{ text: '💎 Премиум на месяц - 299 🔋', callback_data: 'sub_premium_30d' }],
+          [{ text: '💎 Премиум на год - 2999 🔋', callback_data: 'sub_premium_365d' }],
+          [{ text: '🪙 Купить 🔋', callback_data: 'buy_batteries' }]
         ]
       }
     });
@@ -963,7 +963,7 @@ class GeminiBotCopy {
 📅 Дата регистрации: ${session.registrationDate.toLocaleDateString('ru-RU')}
 🔑 Ключ: ${session.subscription}
 🧪 ${session.subscription} запросов сегодня: ${currentRequests}/${maxRequests}
-💰 Баланс: ${session.balance.toFixed(1)} CRED
+💰 Баланс: ${session.balance.toFixed(1)} 🔋
 🎟️ Подписка: ${session.subscription}
 📅 Дата окончания: никогда
 🆔 Уникальный ID: ${session.id}`;
@@ -990,7 +990,7 @@ class GeminiBotCopy {
         help: '❓ <b>Помощь</b>\n\n<b>Доступные команды:</b>\n/menu - Главное меню\n/profile - Ваш профиль\n/info - Информация о боте\n/newdialogue - Новый диалог\n/help - Помощь\n\n<b>Режимы работы:</b>\n🤖 <b>ChatGPT</b> - Универсальный ИИ-ассистент\n🍌 <b>Nano Banana</b> - Анализ изображений (OpenRouter)\n✏️ <b>Nano Banana Edit (kie.ai)</b> - Редактирование изображений\n🎬 <b>Sora 2</b> - Генерация видео\n\n<b>Поддержка:</b> @your_support_username',
         info: 'ℹ️ <b>Информация о боте</b>\n\n<b>GeminiAI</b> - многофункциональный ИИ-бот\n\n<b>Возможности:</b>\n• Текстовая генерация\n• Редактирование изображений через ИИ (kie.ai)\n• Анализ изображений (OpenRouter)\n• Работа с кодом\n• Генерация идей\n• Помощь в обучении\n\n<b>Модели:</b>\n• ChatGPT (GPT-4)\n• Nano Banana (OpenRouter) - анализ\n• Nano Banana Edit (kie.ai) - редактирование\n• Sora 2 (видео)\n\n<b>Премиум:</b>\n• Увеличенные лимиты\n• Приоритетная поддержка\n• Дополнительные функции',
         premium_services: '💎 <b>Премиум-услуги</b>\n\n<b>Преимущества премиума:</b>\n• До 1000 запросов в день\n• Приоритетная обработка\n• Доступ ко всем моделям\n• Расширенные лимиты\n\n💰 Выберите подписку ниже:',
-        subscription_options: '💎 <b>Подписки</b>\n\nВыберите подписку:\n\n📅 <b>На месяц</b> - 299 CRED\n• 1000 запросов/день\n• Все модели\n• Приоритетная поддержка\n\n📅 <b>На год</b> - 2999 CRED\n• Экономия 589 CRED\n• Все преимущества месячной подписки'
+        subscription_options: '💎 <b>Подписки</b>\n\nВыберите подписку:\n\n📅 <b>На месяц</b> - 299 🔋\n• 1000 запросов/день\n• Все модели\n• Приоритетная поддержка\n\n📅 <b>На год</b> - 2999 🔋\n• Экономия 589 🔋\n• Все преимущества месячной подписки'
       },
       en: {
         welcome: '👋 Welcome to GeminiAI!\n\nI can help you with:\n🤖 AI Chat\n🎨 Image Editing\n📝 Text Processing\n\nSelect a mode from the menu below:',
@@ -1011,7 +1011,7 @@ class GeminiBotCopy {
         help: '❓ <b>Help</b>\n\n<b>Available commands:</b>\n/menu - Main menu\n/profile - Your profile\n/info - Bot information\n/newdialogue - New dialogue\n/help - Help\n\n<b>Operating modes:</b>\n🤖 <b>ChatGPT</b> - Universal AI assistant\n🍌 <b>Nano Banana</b> - Image analysis (OpenRouter)\n✏️ <b>Nano Banana Edit (kie.ai)</b> - Image editing\n🎬 <b>Sora 2</b> - Video generation\n\n<b>Support:</b> @your_support_username',
         info: 'ℹ️ <b>Bot Information</b>\n\n<b>GeminiAI</b> - multifunctional AI bot\n\n<b>Capabilities:</b>\n• Text generation\n• AI-powered image editing (kie.ai)\n• Image analysis (OpenRouter)\n• Code work\n• Idea generation\n• Learning assistance\n\n<b>Models:</b>\n• ChatGPT (GPT-4)\n• Nano Banana (OpenRouter) - analysis\n• Nano Banana Edit (kie.ai) - editing\n• Sora 2 (video)\n\n<b>Premium:</b>\n• Increased limits\n• Priority support\n• Additional features',
         premium_services: '💎 <b>Premium Services</b>\n\n<b>Premium benefits:</b>\n• Up to 1000 requests per day\n• Priority processing\n• Access to all models\n• Extended limits\n\n💰 Choose a subscription below:',
-        subscription_options: '💎 <b>Subscriptions</b>\n\nChoose a subscription:\n\n📅 <b>For a month</b> - 299 CRED\n• 1000 requests/day\n• All models\n• Priority support\n\n📅 <b>For a year</b> - 2999 CRED\n• Save 589 CRED\n• All benefits of monthly subscription'
+        subscription_options: '💎 <b>Subscriptions</b>\n\nChoose a subscription:\n\n📅 <b>For a month</b> - 299 🔋\n• 1000 requests/day\n• All models\n• Priority support\n\n📅 <b>For a year</b> - 2999 🔋\n• Save 589 🔋\n• All benefits of monthly subscription'
       }
     };
     

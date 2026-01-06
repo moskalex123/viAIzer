@@ -51,7 +51,7 @@ npm start
 - User profiles with statistics
 - Daily request limits (FREE: 25, PREMIUM: 1000)
 - Subscription system
-- CRED balance management
+- батарейки balance management
 
 ### Interface
 - Bilingual support (Russian/English)

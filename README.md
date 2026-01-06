@@ -12,7 +12,7 @@ A complete working copy of @geminitelegrambot with multi-AI model support, premi
 ### 👤 User Management
 - User profiles with detailed statistics
 - Daily request limits (FREE: 25/day, PREMIUM: 1000/day)
-- Subscription system with CRED currency
+- Subscription system with батарейки currency
 - Conversation history tracking
 
 ### 🌍 Languages
