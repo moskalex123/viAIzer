@@ -4,6 +4,9 @@ import OpenAI from 'openai';
 import fs from 'fs/promises';
 import path from 'path';
 import fetch from 'node-fetch';
+import dbConnection from './src/db/connection.js';
+import userManager from './src/db/userManager.js';
+import sessionManager from './src/session/sessionManager.js';
 
 // Load environment variables
 dotenv.config();
@@ -60,8 +63,27 @@ class GeminiBotCopy {
     this.initializeBot();
   }
 
-  initializeBot() {
+  async initializeBot() {
     console.log('🤖 Initializing Gemini Bot Copy...');
+    
+    // Connect to database
+    if (process.env.DB_ENABLED === 'true') {
+      const dbConfig = {
+        user: process.env.DB_USER,
+        host: process.env.DB_HOST,
+        database: process.env.DB_NAME,
+        password: process.env.DB_PASSWORD,
+        port: parseInt(process.env.DB_PORT) || 5432
+      };
+      
+      await dbConnection.connect(dbConfig);
+      
+      if (!dbConnection.isAvailable()) {
+        console.warn('⚠️ Database unavailable, running in fallback mode');
+      }
+    } else {
+      console.log('⚠️ Database disabled, running in memory-only mode');
+    }
     
     // Log OpenRouter configuration
     if (this.openrouter.enabled) {
@@ -94,39 +116,15 @@ class GeminiBotCopy {
     console.log('✅ Bot initialized successfully!');
   }
 
-  // Session management
-  getUserSession(userId) {
-    if (!this.userSessions.has(userId)) {
-      this.userSessions.set(userId, {
-        id: userId,
-        mode: null,
-        language: 'ru',
-        registrationDate: new Date(),
-        dailyRequests: 0,
-        lastRequestDate: new Date().toDateString(),
-        subscription: 'FREE',
-        balance: 0.0,
-        conversationHistory: []
-      });
-    }
-    
-    const session = this.userSessions.get(userId);
-    
-    // Reset daily requests if it's a new day
-    const today = new Date().toDateString();
-    if (session.lastRequestDate !== today) {
-      session.dailyRequests = 0;
-      session.lastRequestDate = today;
-    }
-    
-    return session;
+  // Session management - now uses database-backed sessions
+  async getUserSession(telegramUser) {
+    return await sessionManager.getSession(telegramUser);
   }
 
   // Command handlers
   async handleStart(msg) {
     const chatId = msg.chat.id;
-    const userId = msg.from.id;
-    const session = this.getUserSession(userId);
+    const session = await this.getUserSession(msg.from);
     
     const welcomeText = this.getLocalizedText('welcome', session.language);
     
@@ -137,8 +135,7 @@ class GeminiBotCopy {
 
   async handleMenu(msg) {
     const chatId = msg.chat.id;
-    const userId = msg.from.id;
-    const session = this.getUserSession(userId);
+    const session = await this.getUserSession(msg.from);
     
     const menuText = this.getLocalizedText('menu', session.language);
     
@@ -149,8 +146,10 @@ class GeminiBotCopy {
 
   async handleProfile(msg) {
     const chatId = msg.chat.id;
-    const userId = msg.from.id;
-    const session = this.getUserSession(userId);
+    const session = await this.getUserSession(msg.from);
+    
+    // Refresh balance from database
+    await sessionManager.refreshBalance(session.id);
     
     const profileText = this.generateProfileText(session);
     
@@ -166,8 +165,7 @@ class GeminiBotCopy {
 
   async handleInfo(msg) {
     const chatId = msg.chat.id;
-    const userId = msg.from.id;
-    const session = this.getUserSession(userId);
+    const session = await this.getUserSession(msg.from);
     
     const infoText = this.getLocalizedText('info', session.language);
     
@@ -178,11 +176,10 @@ class GeminiBotCopy {
 
   async handleNewDialogue(msg) {
     const chatId = msg.chat.id;
-    const userId = msg.from.id;
-    const session = this.getUserSession(userId);
+    const session = await this.getUserSession(msg.from);
     
     // Clear conversation history
-    session.conversationHistory = [];
+    sessionManager.clearConversationHistory(session.id);
     
     const text = this.getLocalizedText('new_dialogue', session.language);
     
@@ -191,8 +188,7 @@ class GeminiBotCopy {
 
   async handleHelp(msg) {
     const chatId = msg.chat.id;
-    const userId = msg.from.id;
-    const session = this.getUserSession(userId);
+    const session = await this.getUserSession(msg.from);
     
     const helpText = this.getLocalizedText('help', session.language);
     
@@ -204,14 +200,13 @@ class GeminiBotCopy {
   // Callback query handler (inline button clicks)
   async handleCallbackQuery(callbackQuery) {
     const chatId = callbackQuery.message.chat.id;
-    const userId = callbackQuery.from.id;
     const data = callbackQuery.data;
-    const session = this.getUserSession(userId);
+    const session = await this.getUserSession(callbackQuery.from);
     
     // Answer the callback query
     await this.bot.answerCallbackQuery(callbackQuery.id);
     
-    console.log(`🖱️ User ${userId} clicked: ${data}`);
+    console.log(`🖱️ User ${session.id} clicked: ${data}`);
     
     switch (data) {
       case 'select_mode':
@@ -221,7 +216,7 @@ class GeminiBotCopy {
         await this.showSubscriptionOptions(chatId, session);
         break;
       case 'profile':
-        await this.handleProfile({ chat: { id: chatId }, from: { id: userId } });
+        await this.handleProfile({ chat: { id: chatId }, from: callbackQuery.from });
         break;
       case 'text_mode':
         await this.handleTextMode(chatId, session);
@@ -244,6 +239,18 @@ class GeminiBotCopy {
     }
   }
 
+  // Set user language
+  async setUserLanguage(chatId, session, lang) {
+    console.log(`🌐 Setting user language to: ${lang}`);
+    
+    await sessionManager.updateLanguage(session.id, lang);
+    
+    const text = this.getLocalizedText('language_selected', session.language)
+      .replace('{lang}', lang);
+    
+    await this.bot.sendMessage(chatId, text);
+  }
+
   // Message handler
   async handleMessage(msg) {
     console.log(`📨 handleMessage called`);
@@ -255,10 +262,9 @@ class GeminiBotCopy {
     }
     
     const chatId = msg.chat.id;
-    const userId = msg.from.id;
-    const session = this.getUserSession(userId);
+    const session = await this.getUserSession(msg.from);
     
-    console.log(`📨 Received message from user ${userId} in chat ${chatId}`);
+    console.log(`📨 Received message from user ${session.id} in chat ${chatId}`);
     console.log(`🔧 Current session mode: ${session.mode}`);
 
     if (msg.photo) {
@@ -339,7 +345,7 @@ class GeminiBotCopy {
     console.log(`🔧 Setting user mode to: ${mode}`);
     
     if (this.config.modes[mode]) {
-      session.mode = mode;
+      sessionManager.updateMode(session.id, mode);
       console.log(`✅ Mode successfully set to: ${mode}`);
       
       const text = this.getLocalizedText('mode_selected', session.language)
@@ -441,7 +447,7 @@ class GeminiBotCopy {
     }
     
     // Check daily limits
-    const maxRequests = this.config.maxDailyRequests[session.subscription];
+    const maxRequests = userManager.getDailyLimit(session.subscription);
     if (session.dailyRequests >= maxRequests) {
       console.log(`🚫 Daily limit reached`);
       const text = this.getLocalizedText('daily_limit_reached', session.language)
@@ -451,9 +457,9 @@ class GeminiBotCopy {
     }
     
     try {
-      session.dailyRequests++;
+      sessionManager.incrementDailyRequests(session.id);
       console.log(`📈 Incremented daily requests to ${session.dailyRequests}`);
-      session.conversationHistory.push({ role: 'user', content: userMessage });
+      sessionManager.addToConversationHistory(session.id, { role: 'user', content: userMessage });
       
       let response;
       
@@ -476,7 +482,7 @@ class GeminiBotCopy {
           response = this.getLocalizedText('mode_not_supported', session.language);
       }
       
-      session.conversationHistory.push({ role: 'assistant', content: response });
+      sessionManager.addToConversationHistory(session.id, { role: 'assistant', content: response });
       console.log(`📤 Sending AI response`);
       
       await this.bot.sendMessage(chatId, response);
@@ -956,9 +962,9 @@ class GeminiBotCopy {
     const today = new Date().toDateString();
     const isNewDay = session.lastRequestDate !== today;
     const currentRequests = isNewDay ? 0 : session.dailyRequests;
-    const maxRequests = this.config.maxDailyRequests[session.subscription];
+    const maxRequests = userManager.getDailyLimit(session.subscription);
     
-    return `<b>👤 Профиль ${session.id}</b>
+    let profileText = `<b>👤 Профиль ${session.id}</b>
 
 📅 Дата регистрации: ${session.registrationDate.toLocaleDateString('ru-RU')}
 🔑 Ключ: ${session.subscription}
@@ -967,6 +973,12 @@ class GeminiBotCopy {
 🎟️ Подписка: ${session.subscription}
 📅 Дата окончания: никогда
 🆔 Уникальный ID: ${session.id}`;
+
+    if (session.isFallback) {
+      profileText += '\n\n⚠️ Оффлайн-режим (база данных недоступна)';
+    }
+    
+    return profileText;
   }
 
   getLocalizedText(key, language = 'ru') {
@@ -977,6 +989,7 @@ class GeminiBotCopy {
         no_mode_selected: '❌ У вас не выбран режим. Пожалуйста, выберите режим в меню снизу.',
         select_mode: '🤖 Выберите нейросеть для работы:',
         mode_selected: '✅ Режим "{mode}" выбран!',
+        language_selected: '✅ Язык изменен на {lang}',
         mode_not_found: '❌ Режим не найден.',
         text_mode_ready: '✅ Режим "Текст" активирован!\n\nТекущая модель: {mode}\n\nОтправьте мне текстовое сообщение, и я помогу вам с ним.',
         design_mode_ready: '✅ Режим "Дизайн" активирован!\n\nТекущая модель: {mode}\n\nОпишите, что вы хотите создать.',
@@ -998,6 +1011,7 @@ class GeminiBotCopy {
         no_mode_selected: '❌ No mode selected. Please select a mode from the menu below.',
         select_mode: '🤖 Choose a neural network to work with:',
         mode_selected: '✅ Mode "{mode}" selected!',
+        language_selected: '✅ Language changed to {lang}',
         mode_not_found: '❌ Mode not found.',
         text_mode_ready: '✅ "Text" mode activated!\n\nCurrent model: {mode}\n\nSend me a text message and I will help you with it.',
         design_mode_ready: '✅ "Design" mode activated!\n\nCurrent model: {mode}\n\nDescribe what you want to create.',

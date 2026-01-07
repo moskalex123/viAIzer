@@ -1,12 +1,13 @@
 {
   "name": "gemini-bot-copy",
   "version": "1.0.0",
-  "description": "Complete copy of @geminitelegrambot with AI models and premium features",
-  "main": "bot-complete.js",
+  "description": "Complete copy of @geminitelegrambot with AI models, premium features, and multi-user database integration",
+  "main": "bot.js",
   "type": "module",
   "scripts": {
-    "start": "node bot-complete.js",
-    "dev": "node bot-complete.js",
+    "start": "node bot.js",
+    "dev": "node bot.js",
+    "test:db": "node test-multi-user-integration.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
